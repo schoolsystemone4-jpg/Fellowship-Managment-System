@@ -37,15 +37,14 @@ const CheckIn = () => {
                     scanner.clear();
 
                     try {
-                        // Simulate API call - in real implementation, use the decoded text
                         const serviceId = 'default-service-id';
-                        await api.post('/attendance/check-in', {
-                            memberId: decodedText, // Use actual QR code data
+                        const response = await api.post('/attendance/check-in', {
+                            qrCode: decodedText,
                             method: 'QR',
                             serviceId,
                         });
                         setStatus('success');
-                        setMessage('Check-in Successful!');
+                        setMessage(response.data.message || 'Check-in Successful!');
                         setTimeout(() => {
                             setStatus('idle');
                             setResult('');

@@ -3,31 +3,52 @@ import prisma from '../prisma';
 
 export const checkIn = async (req: Request, res: Response) => {
     try {
-        const { memberId, serviceId, method } = req.body;
+        const { qrCode, serviceId, method } = req.body;
+
+        // Look up member by QR code
+        const member = await prisma.member.findUnique({
+            where: { qrCode },
+        });
+
+        if (!member) {
+            return res.status(404).json({ error: 'Member not found' });
+        }
 
         // Check if already checked in
         const existing = await prisma.attendance.findUnique({
             where: {
                 memberId_serviceId: {
-                    memberId,
+                    memberId: member.id,
                     serviceId,
                 },
             },
         });
 
         if (existing) {
-            return res.status(400).json({ error: 'Member already checked in' });
+            return res.status(400).json({ error: 'Member already checked in for this service' });
         }
 
         const attendance = await prisma.attendance.create({
             data: {
-                memberId,
+                memberId: member.id,
                 serviceId,
                 method,
             },
+            include: {
+                member: true,
+            },
         });
-        res.status(201).json(attendance);
+
+        res.status(201).json({
+            message: 'Check-in successful',
+            attendance,
+            member: {
+                fullName: member.fullName,
+                phoneNumber: member.phoneNumber,
+            },
+        });
     } catch (error) {
+        console.error('Check-in error:', error);
         res.status(500).json({ error: 'Failed to check in' });
     }
 };
@@ -41,6 +62,7 @@ export const getServiceAttendance = async (req: Request, res: Response) => {
         });
         res.json(attendance);
     } catch (error) {
+        console.error('Failed to fetch attendance:', error);
         res.status(500).json({ error: 'Failed to fetch attendance' });
     }
 };
