@@ -14,6 +14,23 @@ export const checkIn = async (req: Request, res: Response) => {
             return res.status(404).json({ error: 'Member not found' });
         }
 
+        // Ensure service exists - create default if needed
+        let service = await prisma.service.findUnique({
+            where: { id: serviceId },
+        });
+
+        if (!service) {
+            // Create default service
+            service = await prisma.service.create({
+                data: {
+                    id: serviceId,
+                    date: new Date(),
+                    type: 'TUESDAY_FELLOWSHIP',
+                    name: 'Default Service',
+                },
+            });
+        }
+
         // Check if already checked in
         const existing = await prisma.attendance.findUnique({
             where: {
