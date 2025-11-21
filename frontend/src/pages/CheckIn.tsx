@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { QrReader } from 'react-qr-reader';
+import { useState, useEffect } from 'react';
+import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '../api';
-import { Scan, CheckCircle, XCircle, Square, Camera, Zap } from 'lucide-react';
+import { Scan, CheckCircle, XCircle, Zap } from 'lucide-react';
 
 const CheckIn = () => {
     const [result, setResult] = useState('');
@@ -9,31 +9,56 @@ const CheckIn = () => {
     const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
     const [message, setMessage] = useState('');
 
-    const handleScan = async (data: any) => {
-        if (data) {
-            setResult(data?.text);
-            setScanning(false);
-            try {
-                const serviceId = 'default-service-id';
-                await api.post('/attendance/check-in', {
-                    memberId: 'lookup-needed',
-                    method: 'QR',
-                    serviceId
+    useEffect(() => {
+        if (scanning) {
+            const scanner = new Html5QrcodeScanner(
+                'qr-reader',
+                {
+                    fps: 10,
+                    qrbox: { width: 250, height: 250 },
+                    aspectRatio: 1.0,
+                },
+                false
+            );
+
+            scanner.render(
+                async (decodedText) => {
+                    setResult(decodedText);
+                    setScanning(false);
+                    scanner.clear();
+
+                    try {
+                        const serviceId = 'default-service-id';
+                        await api.post('/attendance/check-in', {
+                            memberId: 'lookup-needed',
+                            method: 'QR',
+                            serviceId,
+                        });
+                        setStatus('success');
+                        setMessage('Check-in Successful!');
+                        setTimeout(() => {
+                            setStatus('idle');
+                            setResult('');
+                        }, 3000);
+                    } catch (error) {
+                        console.error(error);
+                        setStatus('error');
+                        setMessage('Check-in Failed. Please try again.');
+                        setTimeout(() => setStatus('idle'), 3000);
+                    }
+                },
+                (errorMessage) => {
+                    console.log(errorMessage);
+                }
+            );
+
+            return () => {
+                scanner.clear().catch((error) => {
+                    console.error('Failed to clear scanner', error);
                 });
-                setStatus('success');
-                setMessage('Check-in Successful!');
-                setTimeout(() => {
-                    setStatus('idle');
-                    setResult('');
-                }, 3000);
-            } catch (error) {
-                console.error(error);
-                setStatus('error');
-                setMessage('Check-in Failed. Please try again.');
-                setTimeout(() => setStatus('idle'), 3000);
-            }
+            };
         }
-    };
+    }, [scanning]);
 
     return (
         <div className="max-w-2xl mx-auto animate-fade-in">
@@ -58,52 +83,29 @@ const CheckIn = () => {
                 </div>
 
                 {/* Scanner Control */}
-                <div className="mb-6 relative z-10">
-                    <button
-                        onClick={() => setScanning(!scanning)}
-                        className={`w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 border-2 ${scanning
-                            ? 'bg-red-600 border-red-600 text-white hover:bg-red-700 shadow-lg'
-                            : 'bg-teal-600 border-teal-600 text-white hover:bg-teal-700 shadow-lg'
-                            }`}
-                    >
-                        {scanning ? (
-                            <>
-                                <Square size={20} fill="currentColor" />
-                                <span>Stop Scanner</span>
-                            </>
-                        ) : (
-                            <>
-                                <Camera size={20} />
-                                <span>Start Scanner</span>
-                            </>
-                        )}
-                    </button>
-                </div>
+                {!scanning && status === 'idle' && (
+                    <div className="mb-6 relative z-10">
+                        <button
+                            onClick={() => setScanning(true)}
+                            className="w-full py-4 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 border-2 bg-teal-600 border-teal-600 text-white hover:bg-teal-700 shadow-lg"
+                        >
+                            <Scan size={20} />
+                            <span>Start Scanner</span>
+                        </button>
+                    </div>
+                )}
 
                 {/* Scanner Window */}
                 {scanning && (
-                    <div className="mb-6 overflow-hidden rounded-xl border-4 border-teal-600 shadow-2xl animate-scale-in relative">
-                        <div className="aspect-video bg-slate-900 relative">
-                            <QrReader
-                                onResult={(result, error) => {
-                                    if (!!result) {
-                                        handleScan(result);
-                                    }
-                                    if (!!error) {
-                                        console.info(error);
-                                    }
-                                }}
-                                constraints={{ facingMode: 'environment' }}
-                                className="w-full h-full"
-                            />
-                            {/* Scanner overlay corners */}
-                            <div className="absolute inset-4 pointer-events-none">
-                                <div className="absolute top-0 left-0 w-8 h-8 border-t-4 border-l-4 border-teal-400"></div>
-                                <div className="absolute top-0 right-0 w-8 h-8 border-t-4 border-r-4 border-teal-400"></div>
-                                <div className="absolute bottom-0 left-0 w-8 h-8 border-b-4 border-l-4 border-teal-400"></div>
-                                <div className="absolute bottom-0 right-0 w-8 h-8 border-b-4 border-r-4 border-teal-400"></div>
-                            </div>
-                        </div>
+                    <div className="mb-6 relative z-10">
+                        <div id="qr-reader" className="rounded-xl overflow-hidden border-4 border-teal-600 shadow-2xl"></div>
+                        <button
+                            onClick={() => setScanning(false)}
+                            className="w-full mt-4 py-3 px-6 rounded-xl font-semibold transition-all duration-300 flex items-center justify-center gap-2 border-2 bg-red-600 border-red-600 text-white hover:bg-red-700 shadow-lg"
+                        >
+                            <XCircle size={20} />
+                            <span>Cancel Scanning</span>
+                        </button>
                     </div>
                 )}
 
@@ -141,22 +143,28 @@ const CheckIn = () => {
                 )}
 
                 {/* Instructions */}
-                {!scanning && status === 'idle' && (
+                {!scanning && status === 'idle' && !result && (
                     <div className="mt-6 p-6 bg-teal-600/10 rounded-xl border-2 border-teal-600/30 relative">
                         <div className="absolute -top-3 left-4 px-3 py-1 bg-teal-600 text-white text-xs font-bold rounded-full">
                             HOW IT WORKS
                         </div>
                         <ol className="text-slate-300 space-y-2.5 list-none pt-2">
                             <li className="flex items-start gap-3">
-                                <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center shrink-0 font-bold mt-0.5">1</span>
+                                <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center shrink-0 font-bold mt-0.5">
+                                    1
+                                </span>
                                 <span>Click "Start Scanner" to activate your device camera</span>
                             </li>
                             <li className="flex items-start gap-3">
-                                <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center shrink-0 font-bold mt-0.5">2</span>
+                                <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center shrink-0 font-bold mt-0.5">
+                                    2
+                                </span>
                                 <span>Position your QR code within the scanning frame</span>
                             </li>
                             <li className="flex items-start gap-3">
-                                <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center shrink-0 font-bold mt-0.5">3</span>
+                                <span className="w-6 h-6 rounded-full bg-teal-600 text-white text-xs flex items-center justify-center shrink-0 font-bold mt-0.5">
+                                    3
+                                </span>
                                 <span>Wait for automatic detection and confirmation</span>
                             </li>
                         </ol>
