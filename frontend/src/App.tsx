@@ -2,7 +2,11 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import Registration from './pages/Registration';
 import CheckIn from './pages/CheckIn';
 import TransportBooking from './pages/TransportBooking';
-import { Home, QrCode, Bus } from 'lucide-react';
+import EventManagement from './pages/EventManagement';
+import GuestCheckIn from './pages/GuestCheckIn';
+import EventReport from './pages/EventReport';
+import CustomReport from './pages/CustomReport';
+import { Home, QrCode, Bus, Calendar, UserPlus, PieChart } from 'lucide-react';
 
 function NavLink({ to, children, icon: Icon }: { to: string; children: React.ReactNode; icon: any }) {
   const location = useLocation();
@@ -21,7 +25,7 @@ function NavLink({ to, children, icon: Icon }: { to: string; children: React.Rea
       `}
     >
       {isActive && (
-        <span className="absolute inset-0 rounded-lg bg-indigo-600 opacity-20 blur-sm"></span>
+        <span className="absolute inset-0 rounded-lg bg indent-600 opacity-20 blur-sm"></span>
       )}
       <Icon size={18} className="relative z-10" />
       <span className="relative z-10">{children}</span>
@@ -60,6 +64,9 @@ function AppContent() {
             <div className="hidden md:flex items-center gap-2">
               <NavLink to="/" icon={Home}>Register</NavLink>
               <NavLink to="/check-in" icon={QrCode}>Check-in</NavLink>
+              <NavLink to="/guest-check-in" icon={UserPlus}>Guest</NavLink>
+              <NavLink to="/events" icon={Calendar}>Events</NavLink>
+              <NavLink to="/reports/custom" icon={PieChart}>Reports</NavLink>
               <NavLink to="/transport" icon={Bus}>Transport</NavLink>
             </div>
           </div>
@@ -68,6 +75,8 @@ function AppContent() {
           <div className="md:hidden flex gap-2 mt-4">
             <NavLink to="/" icon={Home}>Register</NavLink>
             <NavLink to="/check-in" icon={QrCode}>Check-in</NavLink>
+            <NavLink to="/guest-check-in" icon={UserPlus}>Guest</NavLink>
+            <NavLink to="/events" icon={Calendar}>Events</NavLink>
             <NavLink to="/transport" icon={Bus}>Transport</NavLink>
           </div>
         </div>
@@ -79,7 +88,11 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Registration />} />
             <Route path="/check-in" element={<CheckIn />} />
+            <Route path="/guest-check-in" element={<GuestCheckIn />} />
+            <Route path="/events" element={<EventManagement />} />
             <Route path="/transport" element={<TransportBooking />} />
+            <Route path="/events/:id/report" element={<EventReport />} />
+            <Route path="/reports/custom" element={<CustomReport />} />
           </Routes>
         </div>
       </main>

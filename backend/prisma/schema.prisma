@@ -42,41 +42,67 @@ model Member {
 
   attendances       Attendance[]
   transportBookings TransportBooking[]
+
+  @@index([phoneNumber])
 }
 
-model Service {
-  id          String      @id @default(uuid())
-  date        DateTime
-  type        ServiceType
-  name        String?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+model Event {
+  id                String      @id @default(uuid())
+  name              String
+  date              DateTime
+  startTime         String // Format: "HH:MM"
+  endTime           String // Format: "HH:MM"
+  type              ServiceType
+  venue             String?
+  isRecurring       Boolean     @default(false)
+  recurrenceRule    String? // DAILY, WEEKLY, MONTHLY
+  isActive          Boolean     @default(false)
+  allowGuestCheckin Boolean     @default(false)
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   attendances       Attendance[]
+  guestAttendances  GuestAttendance[]
   transportBookings TransportBooking[]
+
+  @@index([date])
+  @@index([isActive])
 }
 
 model Attendance {
   id          String        @id @default(uuid())
   memberId    String
-  serviceId   String
-  checkInTime DateTime      @default(now())
+  eventId     String
   method      CheckInMethod
-  
-  member      Member        @relation(fields: [memberId], references: [id])
-  service     Service       @relation(fields: [serviceId], references: [id])
+  checkedInAt DateTime      @default(now())
 
-  @@unique([memberId, serviceId]) // Prevent duplicate check-ins
+  member Member @relation(fields: [memberId], references: [id])
+  event  Event  @relation(fields: [eventId], references: [id])
+
+  @@unique([memberId, eventId])
 }
 
 model TransportBooking {
   id          String          @id @default(uuid())
   memberId    String
-  serviceId   String
+  eventId     String
   pickupPoint String
   status      TransportStatus @default(PENDING)
-  createdAt   DateTime        @default(now())
+  bookedAt    DateTime        @default(now())
 
-  member      Member          @relation(fields: [memberId], references: [id])
-  service     Service         @relation(fields: [serviceId], references: [id])
+  member Member @relation(fields: [memberId], references: [id])
+  event  Event  @relation(fields: [eventId], references: [id])
+
+  @@unique([memberId, eventId])
+}
+
+model GuestAttendance {
+  id          String   @id @default(uuid())
+  eventId     String
+  guestName   String
+  guestPhone  String?
+  purpose     String?
+  checkedInAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id])
 }

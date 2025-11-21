@@ -5,6 +5,6 @@ import { asyncHandler } from '../utils/asyncHandler';
 const router = Router();
 
 router.post('/book', asyncHandler(bookTransport));
-router.get('/service/:serviceId', asyncHandler(getTransportList));
+router.get('/event/:eventId', asyncHandler(getTransportList));
 
 export default router;

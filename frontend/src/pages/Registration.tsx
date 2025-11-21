@@ -40,6 +40,29 @@ const Registration = () => {
         });
     };
 
+    const handleDownloadQr = () => {
+        const svg = document.querySelector('#qr-code-container svg');
+        if (!svg) return;
+
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+
+        img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            const pngFile = canvas.toDataURL('image/png');
+            const downloadLink = document.createElement('a');
+            downloadLink.download = 'fellowship-qr-code.png';
+            downloadLink.href = pngFile;
+            downloadLink.click();
+        };
+
+        img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+    };
+
     return (
         <div className="max-w-2xl mx-auto animate-fade-in">
             {!qrCode ? (
@@ -210,7 +233,7 @@ const Registration = () => {
                     {/* Action Buttons */}
                     <div className="flex gap-4 justify-center flex-wrap">
                         <button
-                            onClick={() => alert('QR Code download feature coming soon!')}
+                            onClick={handleDownloadQr}
                             className="px-6 py-3 bg-slate-800 text-white font-medium rounded-xl hover:bg-slate-700 transition-all duration-300 flex items-center gap-2 border border-slate-700"
                         >
                             <Download size={20} />

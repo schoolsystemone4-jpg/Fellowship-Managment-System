@@ -3,7 +3,18 @@ import { Html5QrcodeScanner } from 'html5-qrcode';
 import api from '../api';
 import { Scan, CheckCircle, XCircle, Zap, Camera, AlertTriangle, Loader2, RefreshCw } from 'lucide-react';
 
+interface Event {
+    id: string;
+    name: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    allowGuestCheckin: boolean;
+}
+
 const CheckIn = () => {
+    const [activeEvent, setActiveEvent] = useState<Event | null>(null);
+    const [loadingEvent, setLoadingEvent] = useState(true);
     const [result, setResult] = useState('');
     const [scanning, setScanning] = useState(false);
     const [status, setStatus] = useState<'idle' | 'success' | 'error' | 'loading'>('idle');
@@ -12,7 +23,26 @@ const CheckIn = () => {
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
     useEffect(() => {
-        if (scanning) {
+        fetchActiveEvent();
+    }, []);
+
+    const fetchActiveEvent = async () => {
+        try {
+            const response = await api.get('/events/active');
+            setActiveEvent(response.data);
+        } catch (error: any) {
+            if (error.response?.status === 404) {
+                setMessage('No active event. Please wait for an event to start.');
+            } else {
+                setMessage('Failed to load event information');
+            }
+        } finally {
+            setLoadingEvent(false);
+        }
+    };
+
+    useEffect(() => {
+        if (scanning && activeEvent) {
             setPermissionDenied(false);
 
             const scanner = new Html5QrcodeScanner(
@@ -37,11 +67,10 @@ const CheckIn = () => {
                     scanner.clear();
 
                     try {
-                        const serviceId = 'default-service-id';
                         const response = await api.post('/attendance/check-in', {
                             qrCode: decodedText,
                             method: 'QR',
-                            serviceId,
+                            eventId: activeEvent.id,
                         });
                         setStatus('success');
                         setMessage(response.data.message || 'Check-in Successful!');

@@ -1,12 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { Bus, MapPin, CheckCircle, AlertCircle, Clock, Navigation } from 'lucide-react';
+import { Bus, MapPin, CheckCircle, AlertCircle, Clock, Navigation, Search, User } from 'lucide-react';
 
 const TransportBooking = () => {
     const [pickup, setPickup] = useState('');
-    const [memberId, setMemberId] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [member, setMember] = useState<any>(null);
+    const [activeEvent, setActiveEvent] = useState<any>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [bookingStatus, setBookingStatus] = useState<'idle' | 'success' | 'error'>('idle');
+    const [isSearching, setIsSearching] = useState(false);
+    const [bookingStatus, setBookingStatus] = useState<'idle' | 'success' | 'error' | 'no-event'>('idle');
+
+    useEffect(() => {
+        fetchActiveEvent();
+    }, []);
+
+    const fetchActiveEvent = async () => {
+        try {
+            const response = await api.get('/events/active');
+            setActiveEvent(response.data);
+        } catch (error) {
+            setBookingStatus('no-event');
+        }
+    };
+
+    const handleSearchMember = async () => {
+        if (!phoneNumber) return;
+        setIsSearching(true);
+        try {
+            const response = await api.get(`/members/phone/${phoneNumber}`);
+            setMember(response.data);
+        } catch (error) {
+            alert('Member not found');
+            setMember(null);
+        } finally {
+            setIsSearching(false);
+        }
+    };
 
     const pickupPoints = [
         { value: 'HOSTEL_A', label: 'Hostel A', icon: '🏢', time: '7:30 AM' },
@@ -19,17 +49,20 @@ const TransportBooking = () => {
 
     const handleBook = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!member || !activeEvent) return;
+
         setIsSubmitting(true);
         try {
             await api.post('/transport/book', {
-                memberId,
-                serviceId: 'default-service-id',
+                memberId: member.id,
+                serviceId: activeEvent.id,
                 pickupPoint: pickup,
             });
             setBookingStatus('success');
             setTimeout(() => {
                 setBookingStatus('idle');
-                setMemberId('');
+                setPhoneNumber('');
+                setMember(null);
                 setPickup('');
             }, 3000);
         } catch (error) {
@@ -61,25 +94,41 @@ const TransportBooking = () => {
 
                 {bookingStatus === 'idle' ? (
                     <form onSubmit={handleBook} className="space-y-6">
-                        {/* Member ID */}
+                        {/* Member Search */}
                         <div className="space-y-2">
                             <label className="text-sm font-semibold text-slate-300 flex items-center gap-2">
-                                Member ID
+                                Phone Number
                                 <span className="text-red-400">*</span>
-                                <span className="text-xs text-slate-500 font-normal">(Temporary)</span>
                             </label>
-                            <input
-                                type="text"
-                                placeholder="Enter your member ID"
-                                className="input transition-smooth"
-                                value={memberId}
-                                onChange={(e) => setMemberId(e.target.value)}
-                                required
-                            />
-                            <p className="text-xs text-slate-500 flex items-center gap-1">
-                                <span className="w-1 h-1 bg-slate-500 rounded-full"></span>
-                                In the final version, this will be auto-detected
-                            </p>
+                            <div className="flex gap-2">
+                                <input
+                                    type="tel"
+                                    placeholder="Enter phone number"
+                                    className="input transition-smooth flex-1"
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    required
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleSearchMember}
+                                    disabled={isSearching || !phoneNumber}
+                                    className="px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50"
+                                >
+                                    {isSearching ? (
+                                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                                    ) : (
+                                        <Search size={20} />
+                                    )}
+                                </button>
+                            </div>
+                            {member && (
+                                <div className="flex items-center gap-2 text-green-400 bg-green-500/10 p-3 rounded-lg border border-green-500/20">
+                                    <User size={16} />
+                                    <span className="font-medium">{member.fullName}</span>
+                                    <span className="text-xs bg-green-500/20 px-2 py-0.5 rounded text-green-300 ml-auto">Verified</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Pickup Point Selection */}
@@ -96,8 +145,8 @@ const TransportBooking = () => {
                                         type="button"
                                         onClick={() => setPickup(point.value)}
                                         className={`relative p-4 rounded-xl border-2 transition-all duration-300 text-left group ${pickup === point.value
-                                                ? 'bg-pink-600/20 border-pink-600 shadow-lg'
-                                                : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                                            ? 'bg-pink-600/20 border-pink-600 shadow-lg'
+                                            : 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
                                             }`}
                                     >
                                         {/* Selected indicator */}

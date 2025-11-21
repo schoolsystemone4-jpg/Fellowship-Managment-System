@@ -3,12 +3,12 @@ import prisma from '../prisma';
 
 export const bookTransport = async (req: Request, res: Response) => {
     try {
-        const { memberId, serviceId, pickupPoint } = req.body;
+        const { memberId, eventId, pickupPoint } = req.body;
 
         const booking = await prisma.transportBooking.create({
             data: {
                 memberId,
-                serviceId,
+                eventId,
                 pickupPoint,
             },
         });
@@ -20,9 +20,9 @@ export const bookTransport = async (req: Request, res: Response) => {
 
 export const getTransportList = async (req: Request, res: Response) => {
     try {
-        const { serviceId } = req.params;
+        const { eventId } = req.params;
         const bookings = await prisma.transportBooking.findMany({
-            where: { serviceId },
+            where: { eventId },
             include: { member: true },
         });
         res.json(bookings);

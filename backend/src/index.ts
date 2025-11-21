@@ -1,26 +1,46 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import memberRoutes from './routes/memberRoutes';
+import eventRoutes from './routes/eventRoutes';
 import attendanceRoutes from './routes/attendanceRoutes';
 import transportRoutes from './routes/transportRoutes';
+import reportRoutes from './routes/reportRoutes';
 
 dotenv.config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
+// Security Middleware
+app.use(helmet());
 app.use(cors());
+app.use(compression());
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.',
+});
+app.use(limiter);
+
 app.use(express.json());
 
+// Routes
 app.use('/api/members', memberRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/transport', transportRoutes);
+app.use('/api/events', eventRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.get('/', (req, res) => {
     res.send('Fellowship Information Management System API');
 });
 
-app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
