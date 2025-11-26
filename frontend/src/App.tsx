@@ -6,7 +6,12 @@ import EventManagement from './pages/EventManagement';
 import GuestCheckIn from './pages/GuestCheckIn';
 import EventReport from './pages/EventReport';
 import CustomReport from './pages/CustomReport';
-import { Home, QrCode, Bus, Calendar, UserPlus, PieChart } from 'lucide-react';
+import Login from './pages/Login';
+import Profile from './pages/Profile';
+import { ToastProvider } from './components/ToastProvider';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import { Home, QrCode, Bus, Calendar, UserPlus, PieChart, LogIn, LogOut, User } from 'lucide-react';
 
 function NavLink({ to, children, icon: Icon }: { to: string; children: React.ReactNode; icon: any }) {
   const location = useLocation();
@@ -25,11 +30,77 @@ function NavLink({ to, children, icon: Icon }: { to: string; children: React.Rea
       `}
     >
       {isActive && (
-        <span className="absolute inset-0 rounded-lg bg indent-600 opacity-20 blur-sm"></span>
+        <span className="absolute inset-0 rounded-lg bg-indigo-600 opacity-20 blur-sm"></span>
       )}
       <Icon size={18} className="relative z-10" />
       <span className="relative z-10">{children}</span>
     </Link>
+  );
+}
+
+function Navigation() {
+  const { isAuthenticated, isManager, logout } = useAuth();
+
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800 bg-[#151d30]/80 backdrop-blur-xl">
+      <div className="max-w-7xl mx-auto px-6 py-4">
+        <div className="flex justify-between items-center">
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg">
+                <span className="text-xl font-bold text-white">F</span>
+              </div>
+              <div className="absolute -top-1 -right-1 w-3 h-3 bg-teal-500 rounded-full"></div>
+            </div>
+            <div>
+              <h1 className="text-lg font-bold text-white">Fellowship Manager</h1>
+              <p className="text-xs text-slate-500">Digital Registration System</p>
+            </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center gap-2">
+            {isAuthenticated && (
+              <>
+                {isManager && <NavLink to="/" icon={Home}>Register</NavLink>}
+                <NavLink to="/check-in" icon={QrCode}>Check-in</NavLink>
+                {isManager && <NavLink to="/guest-check-in" icon={UserPlus}>Guest</NavLink>}
+                {isManager && <NavLink to="/events" icon={Calendar}>Events</NavLink>}
+                {isManager && <NavLink to="/reports/custom" icon={PieChart}>Reports</NavLink>}
+                <NavLink to="/transport" icon={Bus}>Transport</NavLink>
+                <NavLink to="/profile" icon={User}>Profile</NavLink>
+                <button
+                  onClick={logout}
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg font-medium text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
+                >
+                  <LogOut size={18} />
+                  <span>Logout</span>
+                </button>
+              </>
+            )}
+            {!isAuthenticated && (
+              <NavLink to="/login" icon={LogIn}>Login</NavLink>
+            )}
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden flex gap-2 mt-4 overflow-x-auto pb-2">
+          {isAuthenticated && (
+            <>
+              {isManager && <NavLink to="/" icon={Home}>Register</NavLink>}
+              <NavLink to="/check-in" icon={QrCode}>Check-in</NavLink>
+              <NavLink to="/transport" icon={Bus}>Transport</NavLink>
+              <NavLink to="/profile" icon={User}>Profile</NavLink>
+            </>
+          )}
+          {!isAuthenticated && (
+            <NavLink to="/login" icon={LogIn}>Login</NavLink>
+          )}
+        </div>
+      </div>
+    </nav>
   );
 }
 
@@ -42,57 +113,62 @@ function AppContent() {
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-teal-500 opacity-5 rounded-full blur-3xl"></div>
       </div>
 
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 border-b border-slate-800 bg-[#151d30]/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex justify-between items-center">
-            {/* Logo */}
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-11 h-11 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg">
-                  <span className="text-xl font-bold text-white">F</span>
-                </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-teal-500 rounded-full"></div>
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-white">Fellowship Manager</h1>
-                <p className="text-xs text-slate-500">Digital Registration System</p>
-              </div>
-            </div>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-2">
-              <NavLink to="/" icon={Home}>Register</NavLink>
-              <NavLink to="/check-in" icon={QrCode}>Check-in</NavLink>
-              <NavLink to="/guest-check-in" icon={UserPlus}>Guest</NavLink>
-              <NavLink to="/events" icon={Calendar}>Events</NavLink>
-              <NavLink to="/reports/custom" icon={PieChart}>Reports</NavLink>
-              <NavLink to="/transport" icon={Bus}>Transport</NavLink>
-            </div>
-          </div>
-
-          {/* Mobile Navigation */}
-          <div className="md:hidden flex gap-2 mt-4">
-            <NavLink to="/" icon={Home}>Register</NavLink>
-            <NavLink to="/check-in" icon={QrCode}>Check-in</NavLink>
-            <NavLink to="/guest-check-in" icon={UserPlus}>Guest</NavLink>
-            <NavLink to="/events" icon={Calendar}>Events</NavLink>
-            <NavLink to="/transport" icon={Bus}>Transport</NavLink>
-          </div>
-        </div>
-      </nav>
+      <Navigation />
 
       {/* Main Content */}
       <main className="relative pt-32 pb-12 px-6 min-h-screen">
         <div className="max-w-7xl mx-auto">
           <Routes>
-            <Route path="/" element={<Registration />} />
-            <Route path="/check-in" element={<CheckIn />} />
-            <Route path="/guest-check-in" element={<GuestCheckIn />} />
-            <Route path="/events" element={<EventManagement />} />
-            <Route path="/transport" element={<TransportBooking />} />
-            <Route path="/events/:id/report" element={<EventReport />} />
-            <Route path="/reports/custom" element={<CustomReport />} />
+            <Route path="/login" element={<Login />} />
+
+            {/* Protected Routes */}
+            <Route path="/" element={
+              <ProtectedRoute roles={['FELLOWSHIP_MANAGER']}>
+                <Registration />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/check-in" element={
+              <ProtectedRoute>
+                <CheckIn />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/guest-check-in" element={
+              <ProtectedRoute roles={['FELLOWSHIP_MANAGER']}>
+                <GuestCheckIn />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/events" element={
+              <ProtectedRoute roles={['FELLOWSHIP_MANAGER']}>
+                <EventManagement />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/events/:id/report" element={
+              <ProtectedRoute roles={['FELLOWSHIP_MANAGER']}>
+                <EventReport />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/reports/custom" element={
+              <ProtectedRoute roles={['FELLOWSHIP_MANAGER']}>
+                <CustomReport />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/transport" element={
+              <ProtectedRoute>
+                <TransportBooking />
+              </ProtectedRoute>
+            } />
+
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </main>
@@ -106,7 +182,11 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <AuthProvider>
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
+      </AuthProvider>
     </Router>
   );
 }

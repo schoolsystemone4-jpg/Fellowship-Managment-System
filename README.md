@@ -53,11 +53,19 @@ npm install
 
 3. **Configure environment variables**
 
-Create a `.env` file in the `backend` directory:
+Backend (`.env` file in `backend` directory):
 ```env
 PORT=3000
 DATABASE_URL="postgresql://username:password@localhost:5432/fellowship_manager?schema=public"
+JWT_SECRET=your_secure_random_secret_key_here
 ```
+
+Frontend (`.env` file in `frontend` directory):
+```env
+VITE_API_URL=http://localhost:3000/api
+```
+
+> 💡 **Tip**: Copy from `.env.example` files and update with your values
 
 4. **Run database migrations**
 ```bash

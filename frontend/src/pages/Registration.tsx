@@ -1,37 +1,45 @@
 import React, { useState } from 'react';
 import api from '../api';
 import QRCode from 'react-qr-code';
-import { UserPlus, CheckCircle, Download, RotateCcw, Sparkles } from 'lucide-react';
+import { useToast } from '../components/ToastProvider';
+import { UserPlus, CheckCircle, Download, RotateCcw, Sparkles, Copy, Mail } from 'lucide-react';
 
 const Registration = () => {
+    const { showToast } = useToast();
+    const [loading, setLoading] = useState(false);
     const [formData, setFormData] = useState({
         fullName: '',
+        email: '',
         phoneNumber: '',
         gender: 'MALE',
         residence: '',
         course: '',
         yearOfStudy: 1,
     });
-    const [qrCode, setQrCode] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [createdMember, setCreatedMember] = useState<{ fullName: string; fellowshipNumber: string; defaultPassword?: string; qrCode: string } | null>(null);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsSubmitting(true);
+        setLoading(true);
+
         try {
             const response = await api.post('/members', formData);
-            setQrCode(response.data.qrCode);
-        } catch (error) {
-            alert('Registration failed. Please try again.');
+            setCreatedMember(response.data);
+            showToast('success', 'Member registered successfully!');
+        } catch (error: any) {
+            console.error('Registration error:', error);
+            const errorMessage = error.response?.data?.error || 'Registration failed. Please try again.';
+            showToast('error', errorMessage);
         } finally {
-            setIsSubmitting(false);
+            setLoading(false);
         }
     };
 
     const handleReset = () => {
-        setQrCode(null);
+        setCreatedMember(null);
         setFormData({
             fullName: '',
+            email: '',
             phoneNumber: '',
             gender: 'MALE',
             residence: '',
@@ -65,7 +73,7 @@ const Registration = () => {
 
     return (
         <div className="max-w-2xl mx-auto animate-fade-in">
-            {!qrCode ? (
+            {!createdMember ? (
                 <div className="premium-card accent-border corner-accent p-8 shadow-2xl">
                     {/* Header */}
                     <div className="mb-8 relative">
@@ -98,6 +106,25 @@ const Registration = () => {
                                     className="input transition-smooth"
                                     value={formData.fullName}
                                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                    required
+                                />
+                            </div>
+                        </div>
+
+                        {/* Email */}
+                        <div className="space-y-2 group">
+                            <label className="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                                Email Address
+                                <span className="text-red-400">*</span>
+                            </label>
+                            <div className="relative">
+                                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={20} />
+                                <input
+                                    type="email"
+                                    placeholder="john@example.com"
+                                    className="input pl-12 transition-smooth"
+                                    value={formData.email}
+                                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                     required
                                 />
                             </div>
@@ -179,10 +206,10 @@ const Registration = () => {
                         {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={isSubmitting}
+                            disabled={loading}
                             className="btn btn-primary w-full py-4 text-base font-semibold rounded-xl mt-8 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                         >
-                            {isSubmitting ? (
+                            {loading ? (
                                 <>
                                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                                     <span>Processing...</span>
@@ -214,12 +241,41 @@ const Registration = () => {
                     </div>
 
                     <h2 className="text-3xl font-bold text-white mb-2">Registration Successful!</h2>
-                    <p className="text-slate-400 mb-8">Your QR code has been generated</p>
+                    <p className="text-slate-400 mb-6">Member account has been created.</p>
+
+                    <div className="bg-slate-900/50 rounded-xl p-6 mb-8 border border-slate-700/50 space-y-4 text-left">
+                        <div>
+                            <p className="text-sm text-slate-500 mb-1">Member Name</p>
+                            <p className="text-white font-medium text-lg">{createdMember.fullName}</p>
+                        </div>
+
+                        <div className="pt-4 border-t border-slate-700/50">
+                            <p className="text-sm text-emerald-400 font-medium mb-1">Fellowship Number (Default Password)</p>
+                            <div className="bg-slate-950 rounded-lg p-3 border border-slate-700 flex items-center justify-between">
+                                <code className="text-xl font-mono font-bold text-white tracking-wider">
+                                    {createdMember.defaultPassword || createdMember.fellowshipNumber}
+                                </code>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(createdMember.defaultPassword || createdMember.fellowshipNumber);
+                                        showToast('success', 'Copied to clipboard');
+                                    }}
+                                    className="text-slate-400 hover:text-white transition-colors"
+                                    title="Copy to clipboard"
+                                >
+                                    <Copy size={20} />
+                                </button>
+                            </div>
+                            <p className="text-xs text-slate-500 mt-2">
+                                Please share this number with the member. They will use it as their password to log in.
+                            </p>
+                        </div>
+                    </div>
 
                     {/* QR Code Display */}
-                    <div className="relative inline-block mb-8">
+                    <div className="relative inline-block mb-8" id="qr-code-container">
                         <div className="bg-white p-8 rounded-2xl shadow-2xl">
-                            <QRCode value={qrCode} size={256} />
+                            <QRCode value={createdMember.qrCode} size={256} />
                         </div>
                         <div className="absolute -top-2 -right-2 w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold shadow-lg">
                             QR

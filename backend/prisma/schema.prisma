@@ -28,22 +28,33 @@ enum TransportStatus {
   CANCELLED
 }
 
+enum Role {
+  MEMBER
+  FELLOWSHIP_MANAGER
+}
+
 model Member {
-  id          String   @id @default(uuid())
-  fullName    String
-  phoneNumber String
-  gender      Gender
-  residence   String?
-  course      String?
-  yearOfStudy Int?
-  qrCode      String   @unique @default(uuid())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(uuid())
+  fullName         String
+  email            String   @unique
+  phoneNumber      String
+  password         String
+  role             Role     @default(MEMBER)
+  fellowshipNumber String   @unique
+  gender           Gender
+  residence        String?
+  course           String?
+  yearOfStudy      Int?
+  qrCode           String   @unique @default(uuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   attendances       Attendance[]
   transportBookings TransportBooking[]
 
   @@index([phoneNumber])
+  @@index([email])
+  @@index([fellowshipNumber])
 }
 
 model Event {

@@ -358,7 +358,7 @@ const EventManagement = () => {
                                         </button>
 
                                         <button
-                                            onClick={() => navigate(`/reports/${event.id}`)}
+                                            onClick={() => navigate(`/events/${event.id}/report`)}
                                             className="p-2 rounded-lg bg-blue-500/20 text-blue-300 hover:bg-blue-500/30 transition-all"
                                             title="View Report"
                                         >

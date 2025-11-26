@@ -30,7 +30,12 @@ app.use(limiter);
 
 app.use(express.json());
 
+import authRoutes from './routes/authRoutes';
+
+// ... (existing imports)
+
 // Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/attendance', attendanceRoutes);
 app.use('/api/transport', transportRoutes);

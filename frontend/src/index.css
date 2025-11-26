@@ -5,14 +5,16 @@
 @layer base {
   :root {
     /* Premium Solid Color Palette */
-    --color-primary: #6366f1;
-    /* Indigo */
-    --color-primary-dark: #4f46e5;
-    --color-primary-light: #818cf8;
+    --color-primary: #14b8a6;
+    /* Teal-500 */
+    --color-primary-dark: #0d9488;
+    /* Teal-600 */
+    --color-primary-light: #5eead4;
+    /* Teal-300 */
     --color-secondary: #ec4899;
     /* Pink */
-    --color-accent: #14b8a6;
-    /* Teal */
+    --color-accent: #6366f1;
+    /* Indigo - Secondary */
     --color-success: #10b981;
     --color-warning: #f59e0b;
     --color-error: #ef4444;
@@ -146,6 +148,62 @@
     }
   }
 
+  @keyframes confetti {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+
+    100% {
+      transform: translateY(-100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  @keyframes bounceIn {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+
+    50% {
+      transform: scale(1.05);
+    }
+
+    70% {
+      transform: scale(0.9);
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(0);
+      opacity: 0.6;
+    }
+
+    100% {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  @keyframes slideInRight {
+    from {
+      opacity: 0;
+      transform: translateX(100%);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
   /* Animation Classes */
   .animate-fade-in {
     animation: fadeIn 0.5s ease-out;
@@ -162,6 +220,15 @@
   .animate-scale-in {
     animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  .animate-bounce-in {
+    animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  .animate-slide-in-right {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
 
   /* Glass Effect - No backdrop blur, just transparency */
   .glass-card {
@@ -192,14 +259,14 @@
 
   /* Glow Effect - Solid color with opacity */
   .glow-primary {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0),
-      0 4px 20px rgba(99, 102, 241, 0.25);
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0),
+      0 4px 20px rgba(20, 184, 166, 0.25);
     transition: box-shadow 0.3s ease;
   }
 
   .glow-primary:hover {
-    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1),
-      0 8px 30px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.1),
+      0 8px 30px rgba(20, 184, 166, 0.4);
   }
 
   /* Decorative Corner - Pseudo element */
@@ -247,12 +314,43 @@
   .btn-primary:hover {
     background: var(--color-primary-dark);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 20px rgba(20, 184, 166, 0.3);
   }
 
   .btn-primary:active {
     transform: translateY(0);
   }
+
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Button Ripple Effect */
+  .btn-ripple {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+  }
+
+  .btn-ripple:active::after {
+    width: 300px;
+    height: 300px;
+  }
+
 
   /* Input Base */
   .input {
@@ -269,7 +367,7 @@
   .input:focus {
     outline: none;
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1);
   }
 
   .input::placeholder {
